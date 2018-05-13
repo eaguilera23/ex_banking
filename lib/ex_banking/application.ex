@@ -8,8 +8,7 @@ defmodule ExBanking.Application do
   def start(_type, _args) do
     # List all child processes to be supervised
     children = [
-      # Starts a worker by calling: ExBanking.Worker.start_link(arg)
-      # {ExBanking.Worker, arg},
+      {Registry, keys: :unique, name: Registry.User}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
