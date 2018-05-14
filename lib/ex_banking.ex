@@ -58,4 +58,20 @@ defmodule ExBanking do
         error
     end
   end
+
+  @spec send(
+          from_user :: String.t(),
+          to_user :: String.t(),
+          amount :: number,
+          currency :: String.t()
+        ) :: {:ok, from_user_balance :: number, to_user_balance :: number} | banking_error
+  def send(from_user, to_user, amount, currency) do
+    case Transaction.new(:send, from_user, to_user, amount, currency) do
+      %Transaction{} = transaction ->
+        User.make_transaction(transaction)
+
+      error ->
+        error
+    end
+  end
 end

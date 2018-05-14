@@ -128,4 +128,68 @@ defmodule ExBankingTest do
       assert(result == {:ok, 0})
     end
   end
+
+  describe "send/4" do
+    test "decreases from_user's balance in given currency by amount value" do
+      ExBanking.create_user("from_user")
+      ExBanking.deposit("from_user", 23, "BTC")
+      ExBanking.create_user("to_user")
+      ExBanking.deposit("to_user", 23, "BTC")
+
+      ExBanking.send("from_user", "to_user", 23, "BTC")
+
+      result =
+        Registry.lookup(Registry.User, "from_user")
+        |> hd()
+        |> elem(0)
+        |> :sys.get_state()
+
+      assert(result == %{"BTC" => 0})
+    end
+
+    test "increases to_user's balance in given currency by amount value" do
+      ExBanking.create_user("from_user")
+      ExBanking.deposit("from_user", 23, "BTC")
+      ExBanking.create_user("to_user")
+      ExBanking.deposit("to_user", 23, "BTC")
+
+      ExBanking.send("from_user", "to_user", 23, "BTC")
+
+      result =
+        Registry.lookup(Registry.User, "to_user")
+        |> hd()
+        |> elem(0)
+        |> :sys.get_state()
+
+      assert(result == %{"BTC" => 46.00})
+    end
+
+    test "returns balance of from_user and to_user in given format" do
+      ExBanking.create_user("from_user")
+      ExBanking.deposit("from_user", 23, "BTC")
+      ExBanking.create_user("to_user")
+      ExBanking.deposit("to_user", 23, "BTC")
+
+      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+
+      assert(result == {:ok, 0, 46.00})
+    end
+
+    test "returns error when sender does not exists" do
+      ExBanking.create_user("to_user")
+
+      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+
+      assert(result == {:error, :sender_does_not_exists})
+    end
+
+    test "returns error when receiver does not exists" do
+      ExBanking.create_user("from_user")
+      ExBanking.deposit("from_user", 23, "BTC")
+
+      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+
+      assert(result == {:error, :receiver_does_not_exists})
+    end
+  end
 end

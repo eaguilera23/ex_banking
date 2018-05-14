@@ -4,7 +4,7 @@ defmodule ExBanking.Transaction do
   that it is a valid transaction
   """
   alias ExBanking.{Transaction, User}
-  defstruct [:type, :receiver, :amount, :currency]
+  defstruct [:type, :receiver, :sender, :amount, :currency]
 
   def new(type, user, amount, currency) when is_binary(currency) do
     with {:ok, _} <- User.exists?(user),
@@ -26,6 +26,20 @@ defmodule ExBanking.Transaction do
          }
   end
 
+  # TODO: Check if currency is valid
+  def new(:send, from_user, to_user, amount, currency) do
+    with {:ok, _} <- sender_exists?(from_user),
+         {:ok, _} <- receiver_exists?(to_user),
+         {:ok, correct_amount} <- format_amount(amount),
+         do: %Transaction{
+           type: :send,
+           receiver: to_user,
+           sender: from_user,
+           currency: currency,
+           amount: correct_amount
+         }
+  end
+
   def new(_, _, _), do: {:error, :wrong_arguments}
 
   # TODO: 2 DECIMALS IN NUMBERS
@@ -34,4 +48,24 @@ defmodule ExBanking.Transaction do
   end
 
   defp format_amount(_), do: {:error, :wrong_arguments}
+
+  defp sender_exists?(user) do
+    case User.exists?(user) do
+      {:ok, _} ->
+        {:ok, nil}
+
+      {:error, _} ->
+        {:error, :sender_does_not_exists}
+    end
+  end
+
+  defp receiver_exists?(user) do
+    case User.exists?(user) do
+      {:ok, _} ->
+        {:ok, nil}
+
+      {:error, _} ->
+        {:error, :receiver_does_not_exists}
+    end
+  end
 end
