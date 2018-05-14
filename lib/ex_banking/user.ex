@@ -1,6 +1,6 @@
 defmodule ExBanking.User do
   use GenServer
-  alias ExBanking.{Transaction, Error}
+  alias ExBanking.Transaction
 
   @registry Registry.User
 
@@ -87,9 +87,7 @@ defmodule ExBanking.User do
     {:reply, {:ok, balance}, state}
   end
 
-  def handle_call({:send, transaction}, _from, state) do
-    %Transaction{receiver: to_user, amount: amount, currency: currency} = transaction
-
+  def handle_call({:send, %Transaction{amount: amount, currency: currency} = transaction}, _from, state) do
     {sender_balance, new_state} =
       Map.get_and_update(state, currency, fn
         nil ->
