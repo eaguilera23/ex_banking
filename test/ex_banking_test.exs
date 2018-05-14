@@ -127,6 +127,12 @@ defmodule ExBankingTest do
 
       assert(result === {:ok, 0.0})
     end
+
+    test "returns error if user does not exist" do
+      result = ExBanking.get_balance("balance", "BTC")
+
+      assert(result == {:error, :user_does_not_exists})
+    end
   end
 
   describe "send/4" do

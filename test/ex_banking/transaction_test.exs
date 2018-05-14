@@ -1,6 +1,7 @@
 defmodule ExBanking.TransactionTest do
   use ExUnit.Case
   alias ExBanking.{Transaction, User}
+  require ExBanking.Transaction
 
   setup_all do
     User.create_user("user1")
@@ -99,6 +100,34 @@ defmodule ExBanking.TransactionTest do
       result = Transaction.new(:send, "user1", "user2", -23, "BTC")
 
       assert(result == {:error, :wrong_arguments})
+    end
+  end
+
+  describe "defguard are_binaries/2" do
+    test "returns true when both are binaries" do
+      result = Transaction.are_binaries("a", "b")
+
+      assert(result == true)
+    end
+
+    test "resturns false when 1 of them is not a binary" do
+      result = Transaction.are_binaries(1, "2")
+
+      assert(result == false)
+    end
+  end
+
+  describe "defguard are_binaries/3" do
+    test "returns true when both are binaries" do
+      result = Transaction.are_binaries("a", "b", "C")
+
+      assert(result == true)
+    end
+
+    test "resturns false when 1 of them is not a binary" do
+      result = Transaction.are_binaries(1, "2", "c")
+
+      assert(result == false)
     end
   end
 end
