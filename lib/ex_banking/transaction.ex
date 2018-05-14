@@ -42,9 +42,8 @@ defmodule ExBanking.Transaction do
 
   def new(_, _, _), do: {:error, :wrong_arguments}
 
-  # TODO: 2 DECIMALS IN NUMBERS
   defp format_amount(amount) when is_number(amount) and amount > 0 do
-    {:ok, amount}
+    {:ok, Money.convert_to_integer(amount)}
   end
 
   defp format_amount(_), do: {:error, :wrong_arguments}

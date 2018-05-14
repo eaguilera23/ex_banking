@@ -28,14 +28,14 @@ defmodule ExBankingTest do
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result == %{"BTC" => 23.00})
+      assert(result === %{"BTC" => 2300})
     end
 
     test "Increases user's balance in existing currency by amount value" do
       ExBanking.create_user("deposit")
 
       ExBanking.deposit("deposit", 23, "BTC")
-      ExBanking.deposit("deposit", 23, "BTC")
+      ExBanking.deposit("deposit", 23.021, "BTC")
 
       result =
         Registry.lookup(Registry.User, "deposit")
@@ -43,15 +43,15 @@ defmodule ExBankingTest do
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result == %{"BTC" => 46.00})
+      assert(result === %{"BTC" => 4602})
     end
 
     test "Returns new_balance of the user in given format" do
       ExBanking.create_user("deposit")
 
-      result = ExBanking.deposit("deposit", 23, "BTC")
+      result = ExBanking.deposit("deposit", 23.23, "BTC")
 
-      assert(result == {:ok, 23.00})
+      assert(result == {:ok, 23.23})
     end
 
     test "Returns error if user does not exists" do
@@ -74,7 +74,7 @@ defmodule ExBankingTest do
       ExBanking.create_user("withdraw")
 
       ExBanking.deposit("withdraw", 23, "BTC")
-      ExBanking.withdraw("withdraw", 20, "BTC")
+      ExBanking.withdraw("withdraw", 20.43, "BTC")
 
       result =
         Registry.lookup(Registry.User, "withdraw")
@@ -82,16 +82,16 @@ defmodule ExBankingTest do
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result == %{"BTC" => 3.00})
+      assert(result === %{"BTC" => 257})
     end
 
     test "returns new_balance of the user in given format" do
       ExBanking.create_user("deposit")
 
-      ExBanking.deposit("deposit", 23, "BTC")
+      ExBanking.deposit("deposit", 23.54, "BTC")
       result = ExBanking.withdraw("deposit", 20, "BTC")
 
-      assert(result == {:ok, 3.00})
+      assert(result == {:ok, 3.54})
     end
 
     test "returns error if user does not exists" do
@@ -113,11 +113,11 @@ defmodule ExBankingTest do
   describe "get_balance/2" do
     test "returns balance of the user in given format" do
       ExBanking.create_user("balance")
-      ExBanking.deposit("balance", 23, "BTC")
+      ExBanking.deposit("balance", 23.0004, "BTC")
 
       result = ExBanking.get_balance("balance", "BTC")
 
-      assert(result == {:ok, 23.00})
+      assert(result === {:ok, 23.0})
     end
 
     test "returns balance of user from not existent currency" do
@@ -125,7 +125,7 @@ defmodule ExBankingTest do
 
       result = ExBanking.get_balance("balance", "BTC")
 
-      assert(result == {:ok, 0})
+      assert(result === {:ok, 0.0})
     end
   end
 
@@ -136,7 +136,7 @@ defmodule ExBankingTest do
       ExBanking.create_user("to_user")
       ExBanking.deposit("to_user", 23, "BTC")
 
-      ExBanking.send("from_user", "to_user", 23, "BTC")
+      ExBanking.send("from_user", "to_user", 22.05, "BTC")
 
       result =
         Registry.lookup(Registry.User, "from_user")
@@ -144,7 +144,7 @@ defmodule ExBankingTest do
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result == %{"BTC" => 0})
+      assert(result === %{"BTC" => 95})
     end
 
     test "increases to_user's balance in given currency by amount value" do
@@ -161,7 +161,7 @@ defmodule ExBankingTest do
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result == %{"BTC" => 46.00})
+      assert(result === %{"BTC" => 4600})
     end
 
     test "returns balance of from_user and to_user in given format" do

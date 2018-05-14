@@ -2,7 +2,7 @@ defmodule ExBanking do
   @moduledoc """
   Documentation for ExBanking.
   """
-  alias ExBanking.{User, Transaction}
+  alias ExBanking.{User, Transaction, Format}
 
   @type banking_error ::
           {:error,
@@ -29,6 +29,7 @@ defmodule ExBanking do
     case Transaction.new(:deposit, user, amount, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
+        |> Format.response
 
       error ->
         error
@@ -41,6 +42,7 @@ defmodule ExBanking do
     case Transaction.new(:withdraw, user, amount, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
+        |> Format.response()
 
       error ->
         error
@@ -53,6 +55,7 @@ defmodule ExBanking do
     case Transaction.new(:balance, user, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
+        |> Format.response()
 
       error ->
         error
@@ -69,6 +72,7 @@ defmodule ExBanking do
     case Transaction.new(:send, from_user, to_user, amount, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
+        |> Format.response()
 
       error ->
         error
