@@ -2,7 +2,7 @@ defmodule ExBanking do
   @moduledoc """
   Documentation for ExBanking.
   """
-  alias ExBanking.User
+  alias ExBanking.{User, Transaction}
 
   @type banking_error ::
           {:error,
@@ -16,9 +16,22 @@ defmodule ExBanking do
            | :too_many_requests_to_sender
            | :too_many_requests_to_receiver}
 
-  @spec create_user(user :: String.t) :: :ok | banking_error
+  @spec create_user(user :: String.t()) :: :ok | banking_error
   def create_user(user) when is_binary(user) do
     User.create_user(user)
   end
+
   def create_user(_), do: {:error, :wrong_arguments}
+
+  @spec deposit(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number} | banking_error
+  def deposit(user, amount, currency) do
+    case Transaction.new_deposit(user, amount, currency) do
+      %Transaction{} = transaction ->
+        User.make_transaction(transaction)
+
+      error ->
+        error
+    end
+  end
 end
