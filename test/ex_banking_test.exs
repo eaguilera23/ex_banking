@@ -197,5 +197,16 @@ defmodule ExBankingTest do
 
       assert(result == {:error, :receiver_does_not_exists})
     end
+
+    test "returns error when there is not enough money" do
+      ExBanking.create_user("from_user")
+      ExBanking.deposit("from_user", 23, "BTC")
+      ExBanking.create_user("to_user")
+      ExBanking.deposit("to_user", 23, "BTC")
+
+      result = ExBanking.send("from_user", "to_user", 23.01, "BTC")
+
+      assert(result == {:error, :not_enough_money})
+    end
   end
 end
