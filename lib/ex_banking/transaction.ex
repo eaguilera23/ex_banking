@@ -6,18 +6,18 @@ defmodule ExBanking.Transaction do
   alias ExBanking.{Transaction, User}
   defstruct [:type, :receiver, :amount, :currency]
 
-  def new_deposit(user, amount, currency) when is_binary(currency) do
+  def new(type, user, amount, currency) when is_binary(currency) do
     with {:ok, _} <- User.exists?(user),
          {:ok, correct_amount} <- format_amount(amount),
          do: %Transaction{
-           type: :deposit,
+           type: type,
            receiver: user,
            amount: correct_amount,
            currency: currency
          }
   end
 
-  def new_deposit(_, _, _), do: {:error, :wrong_arguments}
+  def new(_, _, _), do: {:error, :wrong_arguments}
 
   # TODO: 2 DECIMALS IN NUMBERS
   defp format_amount(amount) when is_number(amount) and amount > 0 do

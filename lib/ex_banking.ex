@@ -26,7 +26,19 @@ defmodule ExBanking do
   @spec deposit(user :: String.t(), amount :: number, currency :: String.t()) ::
           {:ok, new_balance :: number} | banking_error
   def deposit(user, amount, currency) do
-    case Transaction.new_deposit(user, amount, currency) do
+    case Transaction.new(:deposit, user, amount, currency) do
+      %Transaction{} = transaction ->
+        User.make_transaction(transaction)
+
+      error ->
+        error
+    end
+  end
+
+  @spec withdraw(user :: String.t(), amount :: number, currency :: String.t()) ::
+          {:ok, new_balance :: number} | banking_error
+  def withdraw(user, amount, currency) do
+    case Transaction.new(:withdraw, user, amount, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
 

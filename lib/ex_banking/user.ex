@@ -24,8 +24,8 @@ defmodule ExBanking.User do
     end
   end
 
-  def make_transaction(%Transaction{type: :deposit, receiver: user} = transaction) do
-    GenServer.call(via_tuple(user), {:deposit, transaction})
+  def make_transaction(%Transaction{type: type, receiver: user} = transaction) do
+    GenServer.call(via_tuple(user), {type, transaction})
   end
 
   def exists?(user) do
@@ -58,5 +58,22 @@ defmodule ExBanking.User do
       end)
 
     {:reply, {:ok, new_balance}, new_state}
+  end
+
+  def handle_call({:withdraw, %Transaction{amount: amount, currency: currency}}, _from, state) do
+    {response, new_state} =
+      Map.get_and_update(state, currency, fn
+        nil ->
+          {{:error, :not_enough_money}, 0}
+
+        prev_balance when prev_balance >= amount ->
+          new = prev_balance - amount
+          {{:ok, new}, new}
+
+        balance ->
+          {{:error, :not_enough_money}, balance}
+      end)
+
+    {:reply, response, new_state}
   end
 end
