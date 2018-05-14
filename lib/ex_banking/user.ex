@@ -76,4 +76,10 @@ defmodule ExBanking.User do
 
     {:reply, response, new_state}
   end
+
+  def handle_call({:balance, %Transaction{currency: currency}}, _from, state) do
+    balance = Map.get(state, currency, 0)
+
+    {:reply, {:ok, balance}, state}
+  end
 end

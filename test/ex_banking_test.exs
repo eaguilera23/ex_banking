@@ -109,4 +109,23 @@ defmodule ExBankingTest do
       assert(result == {:error, :not_enough_money})
     end
   end
+
+  describe "get_balance/2" do
+    test "returns balance of the user in given format" do
+      ExBanking.create_user("balance")
+      ExBanking.deposit("balance", 23, "BTC")
+
+      result = ExBanking.get_balance("balance", "BTC")
+
+      assert(result == {:ok, 23.00})
+    end
+
+    test "returns balance of user from not existent currency" do
+      ExBanking.create_user("balance")
+
+      result = ExBanking.get_balance("balance", "BTC")
+
+      assert(result == {:ok, 0})
+    end
+  end
 end

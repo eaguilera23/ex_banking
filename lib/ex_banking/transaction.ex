@@ -17,6 +17,15 @@ defmodule ExBanking.Transaction do
          }
   end
 
+  def new(:balance, user, currency) when is_binary(currency) do
+    with {:ok, _} <- User.exists?(user),
+         do: %Transaction{
+           type: :balance,
+           receiver: user,
+           currency: currency
+         }
+  end
+
   def new(_, _, _), do: {:error, :wrong_arguments}
 
   # TODO: 2 DECIMALS IN NUMBERS

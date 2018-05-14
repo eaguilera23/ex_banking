@@ -46,4 +46,16 @@ defmodule ExBanking do
         error
     end
   end
+
+  @spec get_balance(user :: String.t(), currency :: String.t()) ::
+          {:ok, balance :: number} | banking_error
+  def get_balance(user, currency) do
+    case Transaction.new(:balance, user, currency) do
+      %Transaction{} = transaction ->
+        User.make_transaction(transaction)
+
+      error ->
+        error
+    end
+  end
 end
