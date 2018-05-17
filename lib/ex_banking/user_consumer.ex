@@ -1,10 +1,17 @@
 defmodule ExBanking.UserConsumer do
+  @moduledoc """
+  This consumer puts backpressure into the `ExBanking.User` producer, 
+  requesting a maximum of 10 items at a time
+
+  After it is started, it subscribes to the producer `:via:` its name.
+  """
   use GenStage
   alias ExBanking.Transaction
   alias ExBanking.User.Vault
 
   @max_demand 10
 
+  @spec start_link(user :: binary) :: {:ok, pid()}
   def start_link(user) do
     {:ok, consumer} = GenStage.start_link(__MODULE__, user, name: via_tuple(user <> "consumer"))
     GenStage.sync_subscribe(consumer, to: via_tuple(user), max_demand: @max_demand, min_demand: 1)
@@ -28,6 +35,9 @@ defmodule ExBanking.UserConsumer do
     {:noreply, [], state}
   end
 
+  @doc """
+  Makes the required transaction
+  """
   def dispatch_transaction(%Transaction{type: :deposit} = transaction) do
     Vault.deposit(transaction)
   end

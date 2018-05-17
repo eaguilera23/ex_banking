@@ -14,7 +14,10 @@ defmodule ExBanking.MixProject do
         "coveralls.detail": :test,
         "coveralls.post": :test,
         "coveralls.html": :test
-      ]
+      ],
+      name: "ExBanking",
+      source_url: "https://github.com/lalo2302/ex_banking",
+      docs: [main: "ExBanking"]
     ]
   end
 
@@ -32,7 +35,8 @@ defmodule ExBanking.MixProject do
       {:moneyex, "~> 0.1.1"},
       {:excoveralls, "~> 0.8", only: :test},
       {:gen_stage, "~> 0.12"},
-      {:eternal, "~> 1.2"}
+      {:eternal, "~> 1.2"},
+      {:ex_doc, "~> 0.16", only: :dev, runtime: false}
     ]
   end
 end

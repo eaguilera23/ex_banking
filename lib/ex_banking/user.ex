@@ -1,10 +1,14 @@
 defmodule ExBanking.User do
+  @moduledoc"""
+  This is a `GenStage` producer. It keeps a `:queue` of the incomming 
+  transactions with the pending demand as a state.
+
+  If the pending demand is 0 it rejects the transaction.
+  Every user producer is spawned `:via` `Elixir.Registry`
+  """
   use GenStage
   alias ExBanking.Transaction
 
-  ###
-  ## Callbacks
-  ###
   def init(counter) do
     {:producer, {:queue.new(), counter}}
   end
@@ -16,6 +20,10 @@ defmodule ExBanking.User do
     GenStage.start_link(__MODULE__, 0, name: via_tuple(user))
   end
 
+  @doc """
+  Sends the transaction to its user
+  """
+  @spec make_transaction(transaction :: Transaction.t()) :: tuple()
   def make_transaction(%Transaction{type: :send, sender: user} = transaction) do
     GenStage.call(via_tuple(user), {:transaction, transaction})
   end

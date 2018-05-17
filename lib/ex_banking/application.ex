@@ -10,7 +10,10 @@ defmodule ExBanking.Application do
     # List all child processes to be supervised
     children = [
       supervisor(ExBanking.User.Supervisor, []),
-      supervisor(Eternal, [ExBanking.User.Vault, [:set, {:read_concurrency, true}, {:write_concurrency, true}]]),
+      supervisor(Eternal, [
+        ExBanking.User.Vault,
+        [:set, {:read_concurrency, true}, {:write_concurrency, true}]
+      ]),
       {Registry, keys: :unique, name: Registry.User}
     ]
 
