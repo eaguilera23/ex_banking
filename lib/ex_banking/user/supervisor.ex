@@ -23,28 +23,37 @@ defmodule ExBanking.User.Supervisor do
     Registry.lookup(Registry.User, name)
   end
 
-  def can_start?([]), do: true
+  def can_start?(list) when length(list) == 0, do: true
   def can_start?(_), do: false
 
   def do_start(false, _), do: {:error, :user_does_not_exists}
 
   def do_start(true, name) do
-    Supervisor.start_child(@name, [name])
+    {:ok, producer} =
+      DynamicSupervisor.start_child(
+        ExBanking.User.DynamicSupervisor,
+        worker(ExBanking.User, [name])
+      )
+
+    {:ok, _} =
+      DynamicSupervisor.start_child(
+        ExBanking.User.DynamicSupervisor,
+        worker(ExBanking.UserConsumer, [name])
+      )
+
+    {:ok, producer}
   end
 
-  def end_start({:ok, pid}), do: :ok
+  def end_start({:ok, _}), do: :ok
   def end_start({:error, _}), do: {:error, :user_already_exists}
   def end_start(reason), do: reason
 
   def init(_) do
-    Logger.info("Starting User Supervisor")
-
     children = [
-      worker(ExBanking.User, [])
+      {DynamicSupervisor, name: ExBanking.User.DynamicSupervisor, strategy: :one_for_one}
     ]
 
-    opts = [strategy: :simple_one_for_one, name: StackDelivery.StackGenSupervisor]
-
-    supervise(children, opts)
+    :ets.new(:vault, [:set, :named_table, :public])
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end

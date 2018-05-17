@@ -41,13 +41,9 @@ defmodule ExBankingTest do
       currency = context[:random].(9)
       ExBanking.deposit(name, 23, currency)
 
-      result =
-        Registry.lookup(Registry.User, name)
-        |> hd()
-        |> elem(0)
-        |> :sys.get_state()
+      [{_, result}] = :ets.lookup(:vault, {name, currency})
 
-      assert(result === %{currency => 2300})
+      assert(result === 2300)
     end
 
     test "Increases user's balance in existing currency by amount value", context do
@@ -55,13 +51,9 @@ defmodule ExBankingTest do
       ExBanking.deposit(name, 23, "BTC")
       ExBanking.deposit(name, 23.021, "BTC")
 
-      result =
-        Registry.lookup(Registry.User, name)
-        |> hd()
-        |> elem(0)
-        |> :sys.get_state()
+      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
 
-      assert(result === %{"BTC" => 4602})
+      assert(result === 4602)
     end
 
     test "Returns new_balance of the user in given format", context do
@@ -91,13 +83,9 @@ defmodule ExBankingTest do
       ExBanking.deposit(name, 23, "BTC")
       ExBanking.withdraw(name, 20.43, "BTC")
 
-      result =
-        Registry.lookup(Registry.User, name)
-        |> hd()
-        |> elem(0)
-        |> :sys.get_state()
+      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
 
-      assert(result === %{"BTC" => 257})
+      assert(result === 257)
     end
 
     test "returns new_balance of the user in given format", context do
@@ -157,13 +145,9 @@ defmodule ExBankingTest do
 
       ExBanking.send(name, name2, 22.05, "BTC")
 
-      result =
-        Registry.lookup(Registry.User, name)
-        |> hd()
-        |> elem(0)
-        |> :sys.get_state()
+      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
 
-      assert(result === %{"BTC" => 95})
+      assert(result === 95)
     end
 
     test "increases to_user's balance in given currency by amount value", context do
@@ -176,13 +160,9 @@ defmodule ExBankingTest do
 
       ExBanking.send(name, name2, 23, "BTC")
 
-      result =
-        Registry.lookup(Registry.User, name2)
-        |> hd()
-        |> elem(0)
-        |> :sys.get_state()
+      [{_, result}] = :ets.lookup(:vault, {name2, "BTC"})
 
-      assert(result === %{"BTC" => 4600})
+      assert(result === 4600)
     end
 
     test "returns balance of from_user and to_user in given format", context do

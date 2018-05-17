@@ -30,7 +30,8 @@ defmodule ExBanking.MixProject do
   defp deps do
     [
       {:moneyex, "~> 0.1.1"},
-      {:excoveralls, "~> 0.8", only: :test}
+      {:excoveralls, "~> 0.8", only: :test},
+      {:gen_stage, "~> 0.12"}
     ]
   end
 end

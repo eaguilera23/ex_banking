@@ -1,29 +1,27 @@
 defmodule ExBanking.User do
-  use GenServer
+  use GenStage
   alias ExBanking.Transaction
-
-  @registry Registry.User
 
   ###
   ## Callbacks
   ###
-  def init(_) do
-    {:ok, Map.new()}
+  def init(counter) do
+    {:producer, {:queue.new(), counter}}
   end
 
   ###
   ## Public API
   ###
   def start_link(user) do
-    GenServer.start_link(__MODULE__, [], name: via_tuple(user))
+    GenStage.start_link(__MODULE__, 0, name: via_tuple(user))
   end
 
   def make_transaction(%Transaction{type: :send, sender: user} = transaction) do
-    GenServer.call(via_tuple(user), {:send, transaction})
+    GenStage.call(via_tuple(user), {:transaction, transaction})
   end
 
-  def make_transaction(%Transaction{type: type, receiver: user} = transaction) do
-    GenServer.call(via_tuple(user), {type, transaction})
+  def make_transaction(%Transaction{receiver: user} = transaction) do
+    GenStage.call(via_tuple(user), {:transaction, transaction})
   end
 
   defp via_tuple(user) do
@@ -31,72 +29,40 @@ defmodule ExBanking.User do
   end
 
   ###
-  ## GenServer calls
+  ## GenStage calls
   ###
 
-  def handle_call({:deposit, %Transaction{amount: amount, currency: currency}}, _from, state) do
-    {new_balance, new_state} =
-      Map.get_and_update(state, currency, fn
-        nil ->
-          {amount, amount}
+  def handle_call({:transaction, transaction}, from, {queue, pending_demand})
+      when pending_demand > 0 do
+    queue = :queue.in({from, transaction}, queue)
 
-        prev_balance ->
-          new = prev_balance + amount
-          {new, new}
-      end)
-
-    {:reply, {:ok, new_balance}, new_state}
+    send(self(), :new_data)
+    {:noreply, [], {queue, pending_demand}}
   end
 
-  def handle_call({:withdraw, %Transaction{amount: amount, currency: currency}}, _from, state) do
-    {response, new_state} =
-      Map.get_and_update(state, currency, fn
-        nil ->
-          {{:error, :not_enough_money}, 0}
+  def handle_call({:transaction, _}, _from, {queue, pending_demand}) do
+    error = {:error, :too_many_requests_to_user}
 
-        prev_balance when prev_balance >= amount ->
-          new = prev_balance - amount
-          {{:ok, new}, new}
-
-        balance ->
-          {{:error, :not_enough_money}, balance}
-      end)
-
-    {:reply, response, new_state}
+    {:reply, error, [], {queue, pending_demand}}
   end
 
-  def handle_call({:balance, %Transaction{currency: currency}}, _from, state) do
-    balance = Map.get(state, currency, 0)
+  def handle_info(:new_data, {queue, pending_demand}) do
+    case :queue.out(queue) do
+      {{:value, transaction}, queue} ->
+        {:noreply, [transaction], {queue, pending_demand - 1}}
 
-    {:reply, {:ok, balance}, state}
+      {:empty, queue} ->
+        {:noreply, [], {queue, pending_demand}}
+    end
   end
 
-  def handle_call(
-        {:send, %Transaction{amount: amount, currency: currency} = transaction},
-        _from,
-        state
-      ) do
-    {sender_balance, new_state} =
-      Map.get_and_update(state, currency, fn
-        nil ->
-          {{:error, :not_enough_money}, 0}
+  def handle_demand(incoming_demand, {queue, pending_demand}) when incoming_demand > 0 do
+    case :queue.out(queue) do
+      {{:value, transaction}, queue} ->
+        {:noreply, [transaction], {queue, pending_demand - 1}}
 
-        prev_balance when prev_balance >= amount ->
-          new = prev_balance - amount
-          {new, new}
-
-        balance ->
-          {{:error, :not_enough_money}, balance}
-      end)
-
-    case sender_balance do
-      {:error, _} ->
-        {:reply, sender_balance, state}
-
-      _ ->
-        deposit_transaction = %{transaction | type: :deposit}
-        {:ok, receiver_balance} = make_transaction(deposit_transaction)
-        {:reply, {:ok, sender_balance, receiver_balance}, new_state}
+      {:empty, queue} ->
+        {:noreply, [], {queue, incoming_demand}}
     end
   end
 end

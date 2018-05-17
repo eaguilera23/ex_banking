@@ -59,8 +59,10 @@ defmodule ExBanking.Transaction do
 
   defp exists?(name) when is_binary(name) do
     # If user can start in the supervisor, means that it does not exists
-    sup_available = ExBanking.User.Supervisor.exists?(name)
-    |> ExBanking.User.Supervisor.can_start?
+    sup_available =
+      ExBanking.User.Supervisor.exists?(name)
+      |> ExBanking.User.Supervisor.can_start?()
+
     not sup_available
   end
 
