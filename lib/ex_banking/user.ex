@@ -49,6 +49,7 @@ defmodule ExBanking.User do
   def handle_info(:new_data, {queue, pending_demand}) do
     case :queue.out(queue) do
       {{:value, transaction}, queue} ->
+        send self(), :new_data
         {:noreply, [transaction], {queue, pending_demand - 1}}
 
       {:empty, queue} ->
@@ -59,10 +60,11 @@ defmodule ExBanking.User do
   def handle_demand(incoming_demand, {queue, pending_demand}) when incoming_demand > 0 do
     case :queue.out(queue) do
       {{:value, transaction}, queue} ->
+        send self(), :new_data
         {:noreply, [transaction], {queue, pending_demand - 1}}
 
       {:empty, queue} ->
-        {:noreply, [], {queue, incoming_demand}}
+        {:noreply, [], {queue, incoming_demand + pending_demand}}
     end
   end
 end
