@@ -37,10 +37,10 @@ defmodule ExBanking.User do
     queue = :queue.in({from, transaction}, queue)
 
     send(self(), :new_data)
-    {:noreply, [], {queue, pending_demand}}
+    {:noreply, [], {queue, pending_demand - 1}}
   end
 
-  def handle_call({:transaction, _}, _from, {queue, pending_demand}) do
+  def handle_call({:transaction, _transaction}, _from, {queue, pending_demand}) do
     error = {:error, :too_many_requests_to_user}
 
     {:reply, error, [], {queue, pending_demand}}
@@ -49,8 +49,7 @@ defmodule ExBanking.User do
   def handle_info(:new_data, {queue, pending_demand}) do
     case :queue.out(queue) do
       {{:value, transaction}, queue} ->
-        send self(), :new_data
-        {:noreply, [transaction], {queue, pending_demand - 1}}
+        {:noreply, [transaction], {queue, pending_demand}}
 
       {:empty, queue} ->
         {:noreply, [], {queue, pending_demand}}
@@ -60,8 +59,7 @@ defmodule ExBanking.User do
   def handle_demand(incoming_demand, {queue, pending_demand}) when incoming_demand > 0 do
     case :queue.out(queue) do
       {{:value, transaction}, queue} ->
-        send self(), :new_data
-        {:noreply, [transaction], {queue, pending_demand - 1}}
+        {:noreply, [transaction], {queue, incoming_demand + pending_demand - 1}}
 
       {:empty, queue} ->
         {:noreply, [], {queue, incoming_demand + pending_demand}}

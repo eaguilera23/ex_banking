@@ -207,4 +207,34 @@ defmodule ExBankingTest do
       assert(result == {:error, :not_enough_money})
     end
   end
+
+  describe "performance tests" do
+    test "can handle 10 requests without a problem", context do
+      name = context[:name]
+      currency = context[:random].(8)
+
+      result =
+        Enum.reduce(0..43, [], fn _, acc ->
+          [Task.async(fn -> ExBanking.deposit(name, 1, currency) end) | acc]
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(fn {res, _} -> res == :ok end)
+
+      assert(result == 10)
+    end
+
+    test "returns error with more than 10 pending requests", context do
+      name = context[:name]
+      currency = context[:random].(8)
+
+      result =
+        Enum.reduce(0..43, [], fn _, acc ->
+          [Task.async(fn -> ExBanking.deposit(name, 1, currency) end) | acc]
+        end)
+        |> Enum.map(&Task.await/1)
+        |> Enum.count(fn {res, _} -> res == :error end)
+
+      assert(result == 34)
+    end
+  end
 end

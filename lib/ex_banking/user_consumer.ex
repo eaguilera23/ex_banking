@@ -3,9 +3,11 @@ defmodule ExBanking.UserConsumer do
   alias ExBanking.Transaction
   alias ExBanking.User.Vault
 
+  @max_demand 10
+
   def start_link(user) do
     {:ok, consumer} = GenStage.start_link(__MODULE__, user, name: via_tuple(user <> "consumer"))
-    GenStage.sync_subscribe(consumer, to: via_tuple(user), max_demand: 10, min_demand: 1)
+    GenStage.sync_subscribe(consumer, to: via_tuple(user), max_demand: @max_demand, min_demand: 1)
     {:ok, consumer}
   end
 
@@ -17,9 +19,12 @@ defmodule ExBanking.UserConsumer do
     {:via, Registry, {Registry.User, user}}
   end
 
-  def handle_events([{origin, transaction}], _from, state) do
-    result = dispatch_transaction(transaction)
-    GenStage.reply(origin, result)
+  def handle_events(transactions, _from, state) do
+    for {origin, transaction} <- transactions do
+      result = dispatch_transaction(transaction)
+      GenStage.reply(origin, result)
+    end
+
     {:noreply, [], state}
   end
 
