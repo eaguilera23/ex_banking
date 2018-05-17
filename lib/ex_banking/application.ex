@@ -6,8 +6,10 @@ defmodule ExBanking.Application do
   use Application
 
   def start(_type, _args) do
+    import Supervisor.Spec, warn: true
     # List all child processes to be supervised
     children = [
+      supervisor(ExBanking.User.Supervisor, []),
       {Registry, keys: :unique, name: Registry.User}
     ]
 

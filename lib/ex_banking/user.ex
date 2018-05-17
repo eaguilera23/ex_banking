@@ -14,14 +14,8 @@ defmodule ExBanking.User do
   ###
   ## Public API
   ###
-  def create_user(user) do
-    case GenServer.start_link(__MODULE__, [], name: via_tuple(user)) do
-      {:ok, _} ->
-        :ok
-
-      {:error, _} ->
-        {:error, :user_already_exists}
-    end
+  def start_link(user) do
+    GenServer.start_link(__MODULE__, [], name: via_tuple(user))
   end
 
   def make_transaction(%Transaction{type: :send, sender: user} = transaction) do
@@ -30,16 +24,6 @@ defmodule ExBanking.User do
 
   def make_transaction(%Transaction{type: type, receiver: user} = transaction) do
     GenServer.call(via_tuple(user), {type, transaction})
-  end
-
-  def exists?(user) do
-    case Registry.lookup(@registry, user) do
-      [] ->
-        {:error, :user_does_not_exists}
-
-      [{pid, _}] ->
-        {:ok, pid}
-    end
   end
 
   defp via_tuple(user) do
@@ -87,7 +71,11 @@ defmodule ExBanking.User do
     {:reply, {:ok, balance}, state}
   end
 
-  def handle_call({:send, %Transaction{amount: amount, currency: currency} = transaction}, _from, state) do
+  def handle_call(
+        {:send, %Transaction{amount: amount, currency: currency} = transaction},
+        _from,
+        state
+      ) do
     {sender_balance, new_state} =
       Map.get_and_update(state, currency, fn
         nil ->

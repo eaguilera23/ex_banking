@@ -1,44 +1,62 @@
 defmodule ExBankingTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
+
+  @bytes Enum.concat([?a..?z, ?A..?Z, ?0..?9]) |> List.to_string()
+  setup_all do
+    random = fn length ->
+      for _ <- 1..length, into: <<>> do
+        index = :rand.uniform(byte_size(@bytes)) - 1
+        <<:binary.at(@bytes, index)>>
+      end
+    end
+
+    [random: random]
+  end
+
+  setup context do
+    random = context[:random]
+    name = random.(8)
+    ExBanking.create_user(name)
+
+    [name: name, random: random]
+  end
 
   describe "create_user/1" do
     test "creates a new user" do
-      result = ExBanking.create_user("test_user")
+      result = ExBanking.create_user("create_user")
 
       assert(result == :ok)
     end
 
-    test "returns error when user already exists" do
-      ExBanking.create_user("test_user")
-
-      result = ExBanking.create_user("test_user")
+    test "returns error when user already exists", context do
+      name = context[:name]
+      result = ExBanking.create_user(name)
       assert(result == {:error, :user_already_exists})
     end
   end
 
   describe "deposit/3" do
-    test "Increases user's balance in not existing currency by amount value" do
-      ExBanking.create_user("deposit")
-
-      ExBanking.deposit("deposit", 23, "BTC")
+    test "Increases user's balance in not existing currency by amount value", context do
+      name = context[:name]
+      currency = context[:random].(9)
+      ExBanking.deposit(name, 23, currency)
 
       result =
-        Registry.lookup(Registry.User, "deposit")
+        Registry.lookup(Registry.User, name)
         |> hd()
         |> elem(0)
         |> :sys.get_state()
 
-      assert(result === %{"BTC" => 2300})
+      assert(result === %{currency => 2300})
     end
 
-    test "Increases user's balance in existing currency by amount value" do
-      ExBanking.create_user("deposit")
-
-      ExBanking.deposit("deposit", 23, "BTC")
-      ExBanking.deposit("deposit", 23.021, "BTC")
+    test "Increases user's balance in existing currency by amount value", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      ExBanking.deposit(name, 23.021, "BTC")
 
       result =
-        Registry.lookup(Registry.User, "deposit")
+        Registry.lookup(Registry.User, name)
         |> hd()
         |> elem(0)
         |> :sys.get_state()
@@ -46,38 +64,35 @@ defmodule ExBankingTest do
       assert(result === %{"BTC" => 4602})
     end
 
-    test "Returns new_balance of the user in given format" do
-      ExBanking.create_user("deposit")
-
-      result = ExBanking.deposit("deposit", 23.23, "BTC")
+    test "Returns new_balance of the user in given format", context do
+      name = context[:name]
+      result = ExBanking.deposit(name, 23.23, "BTC")
 
       assert(result == {:ok, 23.23})
     end
 
     test "Returns error if user does not exists" do
-      result = ExBanking.deposit("deposit", 23, "BTC")
+      result = ExBanking.deposit("not_existent", 23, "BTC")
 
       assert(result == {:error, :user_does_not_exists})
     end
   end
 
   describe "withdraw/3" do
-    test "returns error in not existing currency by amount value" do
-      ExBanking.create_user("withdraw")
-
-      result = ExBanking.withdraw("withdraw", 23, "BTC")
+    test "returns error in not existing currency by amount value", context do
+      name = context[:name]
+      result = ExBanking.withdraw(name, 23, "BTC")
 
       assert(result == {:error, :not_enough_money})
     end
 
-    test "decreases user's balance in existing currency by amount value" do
-      ExBanking.create_user("withdraw")
-
-      ExBanking.deposit("withdraw", 23, "BTC")
-      ExBanking.withdraw("withdraw", 20.43, "BTC")
+    test "decreases user's balance in existing currency by amount value", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      ExBanking.withdraw(name, 20.43, "BTC")
 
       result =
-        Registry.lookup(Registry.User, "withdraw")
+        Registry.lookup(Registry.User, name)
         |> hd()
         |> elem(0)
         |> :sys.get_state()
@@ -85,11 +100,10 @@ defmodule ExBankingTest do
       assert(result === %{"BTC" => 257})
     end
 
-    test "returns new_balance of the user in given format" do
-      ExBanking.create_user("deposit")
-
-      ExBanking.deposit("deposit", 23.54, "BTC")
-      result = ExBanking.withdraw("deposit", 20, "BTC")
+    test "returns new_balance of the user in given format", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23.54, "BTC")
+      result = ExBanking.withdraw(name, 20, "BTC")
 
       assert(result == {:ok, 3.54})
     end
@@ -100,52 +114,51 @@ defmodule ExBankingTest do
       assert(result == {:error, :user_does_not_exists})
     end
 
-    test "returns error if not enough money is in user balance" do
-      ExBanking.create_user("deposit")
-
-      ExBanking.deposit("deposit", 23, "BTC")
-      result = ExBanking.withdraw("deposit", 40, "BTC")
+    test "returns error if not enough money is in user balance", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      result = ExBanking.withdraw(name, 40, "BTC")
 
       assert(result == {:error, :not_enough_money})
     end
   end
 
   describe "get_balance/2" do
-    test "returns balance of the user in given format" do
-      ExBanking.create_user("balance")
-      ExBanking.deposit("balance", 23.0004, "BTC")
+    test "returns balance of the user in given format", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23.0004, "BTC")
 
-      result = ExBanking.get_balance("balance", "BTC")
+      result = ExBanking.get_balance(name, "BTC")
 
       assert(result === {:ok, 23.0})
     end
 
-    test "returns balance of user from not existent currency" do
-      ExBanking.create_user("balance")
-
-      result = ExBanking.get_balance("balance", "BTC")
+    test "returns balance of user from not existent currency", context do
+      name = context[:name]
+      result = ExBanking.get_balance(name, "BTC")
 
       assert(result === {:ok, 0.0})
     end
 
     test "returns error if user does not exist" do
-      result = ExBanking.get_balance("balance", "BTC")
+      result = ExBanking.get_balance("not_existent", "BTC")
 
       assert(result == {:error, :user_does_not_exists})
     end
   end
 
   describe "send/4" do
-    test "decreases from_user's balance in given currency by amount value" do
-      ExBanking.create_user("from_user")
-      ExBanking.deposit("from_user", 23, "BTC")
-      ExBanking.create_user("to_user")
-      ExBanking.deposit("to_user", 23, "BTC")
+    test "decreases from_user's balance in given currency by amount value", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      name2 = context[:random].(8)
+      ExBanking.create_user(name2)
+      ExBanking.deposit(name2, 23, "BTC")
 
-      ExBanking.send("from_user", "to_user", 22.05, "BTC")
+      ExBanking.send(name, name2, 22.05, "BTC")
 
       result =
-        Registry.lookup(Registry.User, "from_user")
+        Registry.lookup(Registry.User, name)
         |> hd()
         |> elem(0)
         |> :sys.get_state()
@@ -153,16 +166,18 @@ defmodule ExBankingTest do
       assert(result === %{"BTC" => 95})
     end
 
-    test "increases to_user's balance in given currency by amount value" do
-      ExBanking.create_user("from_user")
-      ExBanking.deposit("from_user", 23, "BTC")
-      ExBanking.create_user("to_user")
-      ExBanking.deposit("to_user", 23, "BTC")
+    test "increases to_user's balance in given currency by amount value", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
 
-      ExBanking.send("from_user", "to_user", 23, "BTC")
+      name2 = context[:random].(8)
+      ExBanking.create_user(name2)
+      ExBanking.deposit(name2, 23, "BTC")
+
+      ExBanking.send(name, name2, 23, "BTC")
 
       result =
-        Registry.lookup(Registry.User, "to_user")
+        Registry.lookup(Registry.User, name2)
         |> hd()
         |> elem(0)
         |> :sys.get_state()
@@ -170,41 +185,44 @@ defmodule ExBankingTest do
       assert(result === %{"BTC" => 4600})
     end
 
-    test "returns balance of from_user and to_user in given format" do
-      ExBanking.create_user("from_user")
-      ExBanking.deposit("from_user", 23, "BTC")
-      ExBanking.create_user("to_user")
-      ExBanking.deposit("to_user", 23, "BTC")
+    test "returns balance of from_user and to_user in given format", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      name2 = context[:random].(8)
+      ExBanking.create_user(name2)
+      ExBanking.deposit(name2, 23, "BTC")
 
-      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+      result = ExBanking.send(name, name2, 23, "BTC")
 
       assert(result == {:ok, 0, 46.00})
     end
 
-    test "returns error when sender does not exists" do
-      ExBanking.create_user("to_user")
-
-      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+    test "returns error when sender does not exists", context do
+      name = context[:name]
+      name2 = context[:random].(8)
+      result = ExBanking.send(name2, name, 23, "BTC")
 
       assert(result == {:error, :sender_does_not_exists})
     end
 
-    test "returns error when receiver does not exists" do
-      ExBanking.create_user("from_user")
-      ExBanking.deposit("from_user", 23, "BTC")
+    test "returns error when receiver does not exists", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
 
-      result = ExBanking.send("from_user", "to_user", 23, "BTC")
+      name2 = context[:random].(8)
+      result = ExBanking.send(name, name2, 23, "BTC")
 
       assert(result == {:error, :receiver_does_not_exists})
     end
 
-    test "returns error when there is not enough money" do
-      ExBanking.create_user("from_user")
-      ExBanking.deposit("from_user", 23, "BTC")
-      ExBanking.create_user("to_user")
-      ExBanking.deposit("to_user", 23, "BTC")
+    test "returns error when there is not enough money", context do
+      name = context[:name]
+      ExBanking.deposit(name, 23, "BTC")
+      name2 = context[:random].(8)
+      ExBanking.create_user(name2)
+      ExBanking.deposit(name2, 23, "BTC")
 
-      result = ExBanking.send("from_user", "to_user", 23.01, "BTC")
+      result = ExBanking.send(name, name2, 23.01, "BTC")
 
       assert(result == {:error, :not_enough_money})
     end

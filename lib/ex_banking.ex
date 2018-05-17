@@ -18,7 +18,7 @@ defmodule ExBanking do
 
   @spec create_user(user :: String.t()) :: :ok | banking_error
   def create_user(user) when is_binary(user) do
-    User.create_user(user)
+    ExBanking.User.Supervisor.create_user(user)
   end
 
   def create_user(_), do: {:error, :wrong_arguments}
@@ -29,7 +29,7 @@ defmodule ExBanking do
     case Transaction.new(:deposit, user, amount, currency) do
       %Transaction{} = transaction ->
         User.make_transaction(transaction)
-        |> Format.response
+        |> Format.response()
 
       error ->
         error

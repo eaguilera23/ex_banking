@@ -1,11 +1,11 @@
 defmodule ExBanking.TransactionTest do
-  use ExUnit.Case
-  alias ExBanking.{Transaction, User}
+  use ExUnit.Case, async: true
+  alias ExBanking.Transaction
   require ExBanking.Transaction
 
   setup_all do
-    User.create_user("user1")
-    User.create_user("user2")
+    ExBanking.User.Supervisor.create_user("user1")
+    ExBanking.User.Supervisor.create_user("user2")
 
     :ok
   end
@@ -62,7 +62,14 @@ defmodule ExBanking.TransactionTest do
     test "makes a send transaction from correct parameters" do
       result = Transaction.new(:send, "user1", "user2", 23, "BTC")
 
-      should_be = %Transaction{type: :send, receiver: "user2", sender: "user1", amount: 2300, currency: "BTC"}
+      should_be = %Transaction{
+        type: :send,
+        receiver: "user2",
+        sender: "user1",
+        amount: 2300,
+        currency: "BTC"
+      }
+
       assert(result == should_be)
     end
 

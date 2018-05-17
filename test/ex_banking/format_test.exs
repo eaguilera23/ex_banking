@@ -4,7 +4,7 @@ defmodule ExBanking.FormatTest do
 
   describe "response/1" do
     test "returns money as float" do
-      result = 
+      result =
         {:ok, 4323}
         |> Format.response()
 

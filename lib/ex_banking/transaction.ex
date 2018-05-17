@@ -3,13 +3,16 @@ defmodule ExBanking.Transaction do
   The system manages inside a %Transaction{} struct. Inside this module, it validates
   that it is a valid transaction
   """
-  alias ExBanking.{Transaction, User}
+  alias ExBanking.Transaction
+  alias ExBanking.User.Supervisor, as: User
   defstruct [:type, :receiver, :sender, :amount, :currency]
   defguard are_binaries(value1, value2) when is_binary(value1) and is_binary(value2)
-  defguard are_binaries(value1, value2, value3) when is_binary(value1) and is_binary(value2) and is_binary(value3)
+
+  defguard are_binaries(value1, value2, value3)
+           when is_binary(value1) and is_binary(value2) and is_binary(value3)
 
   def new(type, user, amount, currency) when are_binaries(user, currency) do
-    with {:ok, _} <- User.exists?(user),
+    with true <- user_exists?(user),
          {:ok, correct_amount} <- format_amount(amount),
          do: %Transaction{
            type: type,
@@ -18,21 +21,24 @@ defmodule ExBanking.Transaction do
            currency: currency
          }
   end
+
   def new(_, _, _, _), do: {:error, :wrong_arguments}
 
   def new(:balance, user, currency) when are_binaries(user, currency) do
-    with {:ok, _} <- User.exists?(user),
+    with true <- user_exists?(user),
          do: %Transaction{
            type: :balance,
            receiver: user,
            currency: currency
          }
   end
+
   def new(_, _, _), do: {:error, :wrong_arguments}
 
-  def new(:send, from_user, to_user, amount, currency) when are_binaries(from_user, to_user, currency) do
-    with {:ok, _} <- sender_exists?(from_user),
-         {:ok, _} <- receiver_exists?(to_user),
+  def new(:send, from_user, to_user, amount, currency)
+      when are_binaries(from_user, to_user, currency) do
+    with true <- sender_exists?(from_user),
+         true <- receiver_exists?(to_user),
          {:ok, correct_amount} <- format_amount(amount),
          do: %Transaction{
            type: :send,
@@ -51,23 +57,37 @@ defmodule ExBanking.Transaction do
 
   defp format_amount(_), do: {:error, :wrong_arguments}
 
-  defp sender_exists?(user) do
-    case User.exists?(user) do
-      {:ok, _} ->
-        {:ok, nil}
-
-      {:error, _} ->
-        {:error, :sender_does_not_exists}
-    end
+  defp exists?(name) when is_binary(name) do
+    # If user can start in the supervisor, means that it does not exists
+    sup_available = ExBanking.User.Supervisor.exists?(name)
+    |> ExBanking.User.Supervisor.can_start?
+    not sup_available
   end
 
-  defp receiver_exists?(user) do
-    case User.exists?(user) do
-      {:ok, _} ->
-        {:ok, nil}
-
-      {:error, _} ->
-        {:error, :receiver_does_not_exists}
-    end
+  defp user_exists?(name) when is_binary(name) do
+    name
+    |> exists?()
+    |> user_exists?()
   end
+
+  defp user_exists?(true), do: true
+  defp user_exists?(false), do: {:error, :user_does_not_exists}
+
+  defp sender_exists?(user) when is_binary(user) do
+    user
+    |> exists?
+    |> sender_exists?
+  end
+
+  defp sender_exists?(true), do: true
+  defp sender_exists?(false), do: {:error, :sender_does_not_exists}
+
+  defp receiver_exists?(user) when is_binary(user) do
+    user
+    |> exists?
+    |> receiver_exists?
+  end
+
+  defp receiver_exists?(true), do: true
+  defp receiver_exists?(false), do: {:error, :receiver_does_not_exists}
 end
