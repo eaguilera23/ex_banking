@@ -1,7 +1,9 @@
 defmodule ExBankingTest do
   use ExUnit.Case, async: true
 
+  @ets ExBanking.User.Vault
   @bytes Enum.concat([?a..?z, ?A..?Z, ?0..?9]) |> List.to_string()
+
   setup_all do
     random = fn length ->
       for _ <- 1..length, into: <<>> do
@@ -41,7 +43,7 @@ defmodule ExBankingTest do
       currency = context[:random].(9)
       ExBanking.deposit(name, 23, currency)
 
-      [{_, result}] = :ets.lookup(:vault, {name, currency})
+      [{_, result}] = :ets.lookup(@ets, {name, currency})
 
       assert(result === 2300)
     end
@@ -51,7 +53,7 @@ defmodule ExBankingTest do
       ExBanking.deposit(name, 23, "BTC")
       ExBanking.deposit(name, 23.021, "BTC")
 
-      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
+      [{_, result}] = :ets.lookup(@ets, {name, "BTC"})
 
       assert(result === 4602)
     end
@@ -83,7 +85,7 @@ defmodule ExBankingTest do
       ExBanking.deposit(name, 23, "BTC")
       ExBanking.withdraw(name, 20.43, "BTC")
 
-      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
+      [{_, result}] = :ets.lookup(@ets, {name, "BTC"})
 
       assert(result === 257)
     end
@@ -145,7 +147,7 @@ defmodule ExBankingTest do
 
       ExBanking.send(name, name2, 22.05, "BTC")
 
-      [{_, result}] = :ets.lookup(:vault, {name, "BTC"})
+      [{_, result}] = :ets.lookup(@ets, {name, "BTC"})
 
       assert(result === 95)
     end
@@ -160,7 +162,7 @@ defmodule ExBankingTest do
 
       ExBanking.send(name, name2, 23, "BTC")
 
-      [{_, result}] = :ets.lookup(:vault, {name2, "BTC"})
+      [{_, result}] = :ets.lookup(@ets, {name2, "BTC"})
 
       assert(result === 4600)
     end

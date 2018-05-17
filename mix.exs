@@ -21,7 +21,7 @@ defmodule ExBanking.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:logger, :eternal],
       mod: {ExBanking.Application, []}
     ]
   end
@@ -31,7 +31,8 @@ defmodule ExBanking.MixProject do
     [
       {:moneyex, "~> 0.1.1"},
       {:excoveralls, "~> 0.8", only: :test},
-      {:gen_stage, "~> 0.12"}
+      {:gen_stage, "~> 0.12"},
+      {:eternal, "~> 1.2"}
     ]
   end
 end

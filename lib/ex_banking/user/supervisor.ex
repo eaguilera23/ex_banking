@@ -53,7 +53,6 @@ defmodule ExBanking.User.Supervisor do
       {DynamicSupervisor, name: ExBanking.User.DynamicSupervisor, strategy: :one_for_one}
     ]
 
-    :ets.new(:vault, [:set, :named_table, :public])
     Supervisor.init(children, strategy: :one_for_one)
   end
 end
