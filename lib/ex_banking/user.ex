@@ -1,5 +1,5 @@
 defmodule ExBanking.User do
-  @moduledoc"""
+  @moduledoc """
   This is a `GenStage` producer. It keeps a `:queue` of the incomming 
   transactions with the pending demand as a state.
 

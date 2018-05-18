@@ -3,7 +3,7 @@ defmodule ExBanking.Transaction do
   The system manages inside a %Transaction{} struct. Inside this module, it validates
   that it is a valid transaction
   """
-  @type transaction :: Transaction.t
+  @type transaction :: Transaction.t()
 
   alias ExBanking.Transaction
   defstruct [:type, :receiver, :sender, :amount, :currency]
@@ -15,7 +15,8 @@ defmodule ExBanking.Transaction do
   @doc """
   Returns a `transaction()` if it is valid of `type`
   """
-  @spec new(type :: atom(), user :: binary(), amount :: number(), currency :: binary()) :: transaction()
+  @spec new(type :: atom(), user :: binary(), amount :: number(), currency :: binary()) ::
+          transaction()
   def new(type, user, amount, currency) when are_binaries(user, currency) do
     with true <- user_exists?(user),
          {:ok, correct_amount} <- format_amount(amount),
@@ -47,7 +48,13 @@ defmodule ExBanking.Transaction do
   @doc """
   Returns a `send` transaction
   """
-  @spec new(:send, from_user :: binary(), to_user :: binary(), amount :: number(), currency :: binary()) :: transaction()
+  @spec new(
+          :send,
+          from_user :: binary(),
+          to_user :: binary(),
+          amount :: number(),
+          currency :: binary()
+        ) :: transaction()
   def new(:send, from_user, to_user, amount, currency)
       when are_binaries(from_user, to_user, currency) do
     with true <- sender_exists?(from_user),

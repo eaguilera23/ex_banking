@@ -3,7 +3,7 @@ defmodule ExBanking do
   Module to make a variety of transactions of a user.
 
   ## Every user is a pair of `GenStage`
-  
+
   For every user created, there is a par of `GenStage` with a producer 
   and a consumer. This lets every user to handle transactions 
   independently. You can see more about this at `ExBanking.User` and
@@ -23,7 +23,7 @@ defmodule ExBanking do
   available at all times with the help of the `Element` library.
 
   ## Money
-  
+
   Money is handled as integers internally. Being formated on at input
   and output moments. See more on `ExBanking.Format`.
   """
@@ -42,9 +42,9 @@ defmodule ExBanking do
            | :too_many_requests_to_receiver}
 
   @type banking_response ::
-        :ok
-        | {:ok, new_balance :: number}
-        | {:ok, from_user_balance :: number, to_user_balance :: number}
+          :ok
+          | {:ok, new_balance :: number}
+          | {:ok, from_user_balance :: number, to_user_balance :: number}
 
   @doc """
   - Function creates new user in the system
