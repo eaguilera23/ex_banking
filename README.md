@@ -2,7 +2,7 @@
 
 ExBanking is a gateway to process transaction among users
 independently one from another. You can see the 
-specification and API at [Requirements.md](./requirements.md).
+specification and API at [Requirements.md](Requirements.md).
 
 ## Every user is a pair of `GenStage`
 
